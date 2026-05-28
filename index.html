@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PAWD DRINKS — Performance Marketing Dashboard</title>
+<style>
+  :root{
+    --bg:#f6f2ea; --panel:#ffffff; --panel2:#f0ebe1; --border:#e3ddd0;
+    --text:#3a342d; --muted:#8a7f72; --accent:#e89c5a; --accent2:#6b9bb8;
+    --good:#88b08a; --warn:#d97757;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;background:var(--bg);color:var(--text);}
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 24px 64px;}
+  header{display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:16px;margin-bottom:8px;}
+  h1{margin:0;font-size:22px;letter-spacing:.3px;font-weight:600;}
+  h1 .brand{color:var(--accent);font-weight:700;}
+  .sub{color:var(--muted);font-size:13px;margin-top:4px;}
+  .meta{color:var(--muted);font-size:12px;text-align:right;}
+  .kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:22px 0 8px;}
+  .kpi{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:14px 16px;box-shadow:0 1px 2px rgba(58,52,45,.04);}
+  .kpi .label{color:var(--muted);font-size:11px;letter-spacing:.8px;text-transform:uppercase;margin-bottom:6px;}
+  .kpi .value{font-size:22px;font-weight:600;}
+  .kpi .hint{color:var(--muted);font-size:11px;margin-top:4px;}
+  .tabs{display:flex;gap:6px;margin:20px 0 12px;border-bottom:1px solid var(--border);}
+  .tab{padding:9px 16px;border:none;background:transparent;color:var(--muted);cursor:pointer;font:inherit;border-bottom:2px solid transparent;letter-spacing:.3px;}
+  .tab.active{color:var(--text);border-bottom-color:var(--accent);}
+  .tab:hover{color:var(--text);}
+  .panel{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(58,52,45,.04);}
+  .panel h2{margin:0 0 14px;font-size:14px;font-weight:600;color:var(--text);letter-spacing:.3px;}
+  .panel h2 .legend{font-size:11px;color:var(--muted);font-weight:400;margin-left:8px;}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--border);}
+  th:first-child,td:first-child{text-align:left;}
+  th{color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.6px;}
+  footer{color:var(--muted);font-size:11px;margin-top:24px;line-height:1.6;}
+  .pill{display:inline-block;background:var(--panel2);border:1px solid var(--border);border-radius:999px;padding:2px 8px;font-size:11px;color:var(--muted);}
+  .chart-wrap{width:100%;}
+  .chart-wrap svg{display:block;width:100%;height:auto;}
+  .legend-row{display:flex;gap:18px;justify-content:flex-end;font-size:12px;color:var(--muted);margin-bottom:6px;}
+  .legend-row .swatch{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:6px;vertical-align:middle;}
+  .legend-row .line-swatch{display:inline-block;width:18px;height:2px;background:var(--accent2);margin-right:6px;vertical-align:middle;}
+  @media (max-width:900px){
+    .kpis{grid-template-columns:repeat(2,1fr);}
+    .grid2{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1><span class="brand">PAWD DRINKS</span> · Performance Marketing Dashboard</h1>
+      <div class="sub">Blended ad spend vs new customer acquisition · Apr 1 – May 27, 2026</div>
+    </div>
+    <div class="meta">
+      <div>Generated <span id="gen-date"></span></div>
+      <div>Sources: Shopify · Triple Whale</div>
+    </div>
+  </header>
+
+  <div class="kpis">
+    <div class="kpi"><div class="label" id="kpi-spend-label">Total Spend</div><div class="value" id="kpi-spend">—</div><div class="hint" id="kpi-spend-hint">Blended (Triple Whale)</div></div>
+    <div class="kpi"><div class="label" id="kpi-nc-label">New Customers</div><div class="value" id="kpi-nc">—</div><div class="hint" id="kpi-nc-hint">First Order tag, ex-Amazon</div></div>
+    <div class="kpi"><div class="label">Blended CAC</div><div class="value" id="kpi-cac">—</div><div class="hint" id="kpi-cac-hint">Spend ÷ NC</div></div>
+    <div class="kpi"><div class="label">Sub Uptake</div><div class="value" id="kpi-uptake">—</div><div class="hint" id="kpi-uptake-hint">Sub first orders ÷ NC</div></div>
+    <div class="kpi"><div class="label">Active Subs</div><div class="value" id="kpi-subs">—</div><div class="hint" id="kpi-subs-hint">As of May 27</div></div>
+  </div>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-view="daily">Daily</button>
+    <button class="tab" data-view="weekly">Weekly</button>
+    <button class="tab" data-view="monthly">Monthly</button>
+    <button class="tab" data-view="quarterly">Quarterly</button>
+  </div>
+
+  <div class="panel">
+    <h2>Spend vs Blended CAC <span class="legend">· bars = spend (£), line = CAC (£)</span></h2>
+    <div class="legend-row">
+      <span><span class="swatch" style="background:#ffb84d"></span>Spend (£)</span>
+      <span><span class="line-swatch"></span>Blended CAC (£)</span>
+    </div>
+    <div class="chart-wrap" id="combo-host"></div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h2>New Customer Mix <span class="legend">· stacked: subscription vs one-time</span></h2>
+      <div class="legend-row">
+        <span><span class="swatch" style="background:#3ed598"></span>Subscription</span>
+        <span><span class="swatch" style="background:#8b95a3"></span>One-time</span>
+      </div>
+      <div class="chart-wrap" id="mix-host"></div>
+    </div>
+    <div class="panel">
+      <h2>Active Subscribers <span class="legend">· trend over period</span></h2>
+      <div class="chart-wrap" id="subs-host"></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Detail Table <span class="legend" id="table-legend"></span></h2>
+    <div style="overflow:auto;max-height:380px;">
+      <table id="detail">
+        <thead><tr><th>Period</th><th>Spend</th><th>NC</th><th>Sub NC</th><th>OTP NC</th><th>CAC</th><th>Uptake %</th><th>Subs (end)</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>
+    <span class="pill">Notes</span>
+    Spend data covers Apr 1 – May 27, 2026 (57 days). Quarterly view shows only partial Q2 2026 due to spend data window.
+    New customers defined as Shopify orders with the "First Order" tag, excluding orders tagged "Amazon".
+    One anomalous order (May 5) carrying both "First Order" + "Subscription Recurring Order" tags is counted as OTP.
+    Active subscribers source: Triple Whale daily snapshot.
+  </footer>
+</div>
+
+<script>
+const PAYLOAD = {"meta":{"window_start":"2026-04-01","window_end":"2026-05-27","generated_at":"2026-05-28T15:43:03.743650","data_source_note":"Shopify orders tagged 'First Order' AND NOT 'Amazon'; spend from Triple Whale via Google Sheets export."},"totals":{"spend":31561.0,"nc":641,"sub_nc":401,"otp_nc":240,"cac":49.24,"sub_uptake":62.6,"subs_latest":1063},"daily":[{"date":"2026-04-01","spend":917.0,"nc":12,"sub_nc":8,"otp_nc":4,"cac":76.42,"sub_uptake":66.7,"subs":1058},{"date":"2026-04-02","spend":704.0,"nc":10,"sub_nc":9,"otp_nc":1,"cac":70.4,"sub_uptake":90.0,"subs":1055},{"date":"2026-04-03","spend":798.0,"nc":15,"sub_nc":12,"otp_nc":3,"cac":53.2,"sub_uptake":80.0,"subs":1061},{"date":"2026-04-04","spend":789.0,"nc":11,"sub_nc":6,"otp_nc":5,"cac":71.73,"sub_uptake":54.5,"subs":1062},{"date":"2026-04-05","spend":738.0,"nc":10,"sub_nc":7,"otp_nc":3,"cac":73.8,"sub_uptake":70.0,"subs":1065},{"date":"2026-04-06","spend":678.0,"nc":12,"sub_nc":9,"otp_nc":3,"cac":56.5,"sub_uptake":75.0,"subs":1060},{"date":"2026-04-07","spend":689.0,"nc":9,"sub_nc":4,"otp_nc":5,"cac":76.56,"sub_uptake":44.4,"subs":1061},{"date":"2026-04-08","spend":755.0,"nc":10,"sub_nc":2,"otp_nc":8,"cac":75.5,"sub_uptake":20.0,"subs":1047},{"date":"2026-04-09","spend":748.0,"nc":11,"sub_nc":6,"otp_nc":5,"cac":68.0,"sub_uptake":54.5,"subs":1045},{"date":"2026-04-10","spend":670.0,"nc":19,"sub_nc":12,"otp_nc":7,"cac":35.26,"sub_uptake":63.2,"subs":1043},{"date":"2026-04-11","spend":707.0,"nc":6,"sub_nc":6,"otp_nc":0,"cac":117.83,"sub_uptake":100.0,"subs":1045},{"date":"2026-04-12","spend":949.0,"nc":11,"sub_nc":9,"otp_nc":2,"cac":86.27,"sub_uptake":81.8,"subs":1046},{"date":"2026-04-13","spend":694.0,"nc":12,"sub_nc":6,"otp_nc":6,"cac":57.83,"sub_uptake":50.0,"subs":1041},{"date":"2026-04-14","spend":660.0,"nc":17,"sub_nc":16,"otp_nc":1,"cac":38.82,"sub_uptake":94.1,"subs":1050},{"date":"2026-04-15","spend":698.0,"nc":15,"sub_nc":10,"otp_nc":5,"cac":46.53,"sub_uptake":66.7,"subs":1047},{"date":"2026-04-16","spend":755.0,"nc":7,"sub_nc":3,"otp_nc":4,"cac":107.86,"sub_uptake":42.9,"subs":1047},{"date":"2026-04-17","spend":638.0,"nc":7,"sub_nc":3,"otp_nc":4,"cac":91.14,"sub_uptake":42.9,"subs":1047},{"date":"2026-04-18","spend":943.0,"nc":5,"sub_nc":1,"otp_nc":4,"cac":188.6,"sub_uptake":20.0,"subs":1046},{"date":"2026-04-19","spend":921.0,"nc":7,"sub_nc":3,"otp_nc":4,"cac":131.57,"sub_uptake":42.9,"subs":1045},{"date":"2026-04-20","spend":504.0,"nc":9,"sub_nc":6,"otp_nc":3,"cac":56.0,"sub_uptake":66.7,"subs":1038},{"date":"2026-04-21","spend":676.0,"nc":8,"sub_nc":3,"otp_nc":5,"cac":84.5,"sub_uptake":37.5,"subs":1030},{"date":"2026-04-22","spend":661.0,"nc":5,"sub_nc":3,"otp_nc":2,"cac":132.2,"sub_uptake":60.0,"subs":1029},{"date":"2026-04-23","spend":336.0,"nc":10,"sub_nc":5,"otp_nc":5,"cac":33.6,"sub_uptake":50.0,"subs":1031},{"date":"2026-04-24","spend":322.0,"nc":11,"sub_nc":6,"otp_nc":5,"cac":29.27,"sub_uptake":54.5,"subs":1030},{"date":"2026-04-25","spend":342.0,"nc":5,"sub_nc":3,"otp_nc":2,"cac":68.4,"sub_uptake":60.0,"subs":1031},{"date":"2026-04-26","spend":459.0,"nc":2,"sub_nc":2,"otp_nc":0,"cac":229.5,"sub_uptake":100.0,"subs":1031},{"date":"2026-04-27","spend":254.0,"nc":8,"sub_nc":7,"otp_nc":1,"cac":31.75,"sub_uptake":87.5,"subs":1029},{"date":"2026-04-28","spend":170.0,"nc":4,"sub_nc":2,"otp_nc":2,"cac":42.5,"sub_uptake":50.0,"subs":1021},{"date":"2026-04-29","spend":161.0,"nc":2,"sub_nc":1,"otp_nc":1,"cac":80.5,"sub_uptake":50.0,"subs":1021},{"date":"2026-04-30","spend":50.0,"nc":2,"sub_nc":1,"otp_nc":1,"cac":25.0,"sub_uptake":50.0,"subs":1014},{"date":"2026-05-01","spend":0.0,"nc":1,"sub_nc":1,"otp_nc":0,"cac":0.0,"sub_uptake":100.0,"subs":1014},{"date":"2026-05-02","spend":499.0,"nc":1,"sub_nc":0,"otp_nc":1,"cac":499.0,"sub_uptake":0.0,"subs":1017},{"date":"2026-05-03","spend":661.0,"nc":10,"sub_nc":3,"otp_nc":7,"cac":66.1,"sub_uptake":30.0,"subs":1020},{"date":"2026-05-04","spend":537.0,"nc":9,"sub_nc":5,"otp_nc":4,"cac":59.67,"sub_uptake":55.6,"subs":1013},{"date":"2026-05-05","spend":526.0,"nc":8,"sub_nc":5,"otp_nc":3,"cac":65.75,"sub_uptake":62.5,"subs":1007},{"date":"2026-05-06","spend":555.0,"nc":17,"sub_nc":6,"otp_nc":11,"cac":32.65,"sub_uptake":35.3,"subs":1004},{"date":"2026-05-07","spend":423.0,"nc":9,"sub_nc":6,"otp_nc":3,"cac":47.0,"sub_uptake":66.7,"subs":1004},{"date":"2026-05-08","spend":564.0,"nc":8,"sub_nc":5,"otp_nc":3,"cac":70.5,"sub_uptake":62.5,"subs":1004},{"date":"2026-05-09","spend":486.0,"nc":6,"sub_nc":5,"otp_nc":1,"cac":81.0,"sub_uptake":83.3,"subs":1004},{"date":"2026-05-10","spend":564.0,"nc":14,"sub_nc":7,"otp_nc":7,"cac":40.29,"sub_uptake":50.0,"subs":1010},{"date":"2026-05-11","spend":493.0,"nc":10,"sub_nc":7,"otp_nc":3,"cac":49.3,"sub_uptake":70.0,"subs":1007},{"date":"2026-05-12","spend":470.0,"nc":9,"sub_nc":6,"otp_nc":3,"cac":52.22,"sub_uptake":66.7,"subs":1006},{"date":"2026-05-13","spend":518.0,"nc":5,"sub_nc":1,"otp_nc":4,"cac":103.6,"sub_uptake":20.0,"subs":996},{"date":"2026-05-14","spend":548.0,"nc":8,"sub_nc":5,"otp_nc":3,"cac":68.5,"sub_uptake":62.5,"subs":994},{"date":"2026-05-15","spend":432.0,"nc":6,"sub_nc":5,"otp_nc":1,"cac":72.0,"sub_uptake":83.3,"subs":995},{"date":"2026-05-16","spend":461.0,"nc":85,"sub_nc":53,"otp_nc":32,"cac":5.42,"sub_uptake":62.4,"subs":1042},{"date":"2026-05-17","spend":704.0,"nc":64,"sub_nc":38,"otp_nc":26,"cac":11.0,"sub_uptake":59.4,"subs":1075},{"date":"2026-05-18","spend":536.0,"nc":8,"sub_nc":5,"otp_nc":3,"cac":67.0,"sub_uptake":62.5,"subs":1071},{"date":"2026-05-19","spend":480.0,"nc":19,"sub_nc":15,"otp_nc":4,"cac":25.26,"sub_uptake":78.9,"subs":1081},{"date":"2026-05-20","spend":468.0,"nc":13,"sub_nc":11,"otp_nc":2,"cac":36.0,"sub_uptake":84.6,"subs":1082},{"date":"2026-05-21","spend":428.0,"nc":10,"sub_nc":7,"otp_nc":3,"cac":42.8,"sub_uptake":70.0,"subs":1075},{"date":"2026-05-22","spend":413.0,"nc":5,"sub_nc":1,"otp_nc":4,"cac":82.6,"sub_uptake":20.0,"subs":1069},{"date":"2026-05-23","spend":471.0,"nc":10,"sub_nc":6,"otp_nc":4,"cac":47.1,"sub_uptake":60.0,"subs":1066},{"date":"2026-05-24","spend":543.0,"nc":12,"sub_nc":12,"otp_nc":0,"cac":45.25,"sub_uptake":100.0,"subs":1078},{"date":"2026-05-25","spend":499.0,"nc":9,"sub_nc":6,"otp_nc":3,"cac":55.44,"sub_uptake":66.7,"subs":1080},{"date":"2026-05-26","spend":429.0,"nc":8,"sub_nc":7,"otp_nc":1,"cac":53.62,"sub_uptake":87.5,"subs":1075},{"date":"2026-05-27","spend":467.0,"nc":5,"sub_nc":2,"otp_nc":3,"cac":93.4,"sub_uptake":40.0,"subs":1063}],"weekly":[{"start":"2026-03-30","end":"2026-04-05","spend":3946.0,"nc":58,"sub_nc":42,"otp_nc":16,"cac":68.03,"sub_uptake":72.4,"subs_end":1065},{"start":"2026-04-06","end":"2026-04-12","spend":5196.0,"nc":78,"sub_nc":48,"otp_nc":30,"cac":66.62,"sub_uptake":61.5,"subs_end":1046},{"start":"2026-04-13","end":"2026-04-19","spend":5309.0,"nc":70,"sub_nc":42,"otp_nc":28,"cac":75.84,"sub_uptake":60.0,"subs_end":1045},{"start":"2026-04-20","end":"2026-04-26","spend":3300.0,"nc":50,"sub_nc":28,"otp_nc":22,"cac":66.0,"sub_uptake":56.0,"subs_end":1031},{"start":"2026-04-27","end":"2026-05-03","spend":1795.0,"nc":28,"sub_nc":15,"otp_nc":13,"cac":64.11,"sub_uptake":53.6,"subs_end":1020},{"start":"2026-05-04","end":"2026-05-10","spend":3655.0,"nc":71,"sub_nc":39,"otp_nc":32,"cac":51.48,"sub_uptake":54.9,"subs_end":1010},{"start":"2026-05-11","end":"2026-05-17","spend":3626.0,"nc":187,"sub_nc":115,"otp_nc":72,"cac":19.39,"sub_uptake":61.5,"subs_end":1075},{"start":"2026-05-18","end":"2026-05-24","spend":3339.0,"nc":77,"sub_nc":57,"otp_nc":20,"cac":43.36,"sub_uptake":74.0,"subs_end":1078},{"start":"2026-05-25","end":"2026-05-31","spend":1395.0,"nc":22,"sub_nc":15,"otp_nc":7,"cac":63.41,"sub_uptake":68.2,"subs_end":1063}],"monthly":[{"key":"2026-04","label":"Apr 2026","spend":18386.0,"nc":272,"sub_nc":171,"otp_nc":101,"cac":67.6,"sub_uptake":62.9,"subs_end":1014},{"key":"2026-05","label":"May 2026","spend":13175.0,"nc":369,"sub_nc":230,"otp_nc":139,"cac":35.7,"sub_uptake":62.3,"subs_end":1063}],"quarterly":[{"key":"2026-Q2","label":"Q2 2026","spend":31561.0,"nc":641,"sub_nc":401,"otp_nc":240,"cac":49.24,"sub_uptake":62.6,"subs_end":1063}]};
+
+const fmtGBP0 = n => '£' + Math.round(n).toLocaleString('en-GB');
+const fmtGBP2 = n => '£' + n.toLocaleString('en-GB',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtPct1 = n => n.toFixed(1) + '%';
+const fmtInt = n => n.toLocaleString('en-GB');
+
+// UK-style date formatters (input: "YYYY-MM-DD")
+const _MON_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtUK(iso){
+  if(!iso) return '';
+  const p = iso.split('-');
+  return parseInt(p[2],10) + ' ' + _MON_SHORT[parseInt(p[1],10)-1] + ' ' + p[0];
+}
+function fmtUKShort(iso){
+  if(!iso) return '';
+  const p = iso.split('-');
+  return parseInt(p[2],10) + ' ' + _MON_SHORT[parseInt(p[1],10)-1];
+}
+
+// Populate generated timestamp
+document.getElementById('gen-date').textContent = new Date(PAYLOAD.meta.generated_at).toLocaleString('en-GB',{dateStyle:'medium',timeStyle:'short'});
+
+// KPI tiles refresh per view — show the LATEST period for the selected granularity
+function renderKpis(view){
+  const rows = rowsFor(view);
+  const latest = rows[rows.length-1];
+  const sk = subsKey(view);
+
+  // Tile values
+  document.getElementById('kpi-spend').textContent = fmtGBP0(latest.spend);
+  document.getElementById('kpi-nc').textContent = fmtInt(latest.nc);
+  document.getElementById('kpi-cac').textContent = latest.nc>0 ? fmtGBP2(latest.cac) : '—';
+  document.getElementById('kpi-uptake').textContent = latest.nc>0 ? fmtPct1(latest.sub_uptake) : '—';
+  document.getElementById('kpi-subs').textContent = fmtInt(latest[sk]);
+
+  // Period-aware labels & hints
+  const periodLbl = periodLabel(view, latest);
+  const spendLabelByView = {daily:'Spend (latest day)', weekly:'Spend (latest week)', monthly:'Spend (latest month)', quarterly:'Spend (latest quarter)'};
+  const ncLabelByView    = {daily:'NC (latest day)',    weekly:'NC (latest week)',    monthly:'NC (latest month)',    quarterly:'NC (latest quarter)'};
+  document.getElementById('kpi-spend-label').textContent = spendLabelByView[view];
+  document.getElementById('kpi-nc-label').textContent = ncLabelByView[view];
+  document.getElementById('kpi-spend-hint').textContent = periodLbl;
+  document.getElementById('kpi-nc-hint').textContent = periodLbl;
+  document.getElementById('kpi-cac-hint').textContent = periodLbl;
+  document.getElementById('kpi-uptake-hint').textContent = periodLbl;
+  document.getElementById('kpi-subs-hint').textContent = view==='daily' ? 'As of '+fmtUK(latest.date) : 'End of '+periodLbl;
+}
+
+const COLORS = {accent:'#e89c5a',accent2:'#6b9bb8',good:'#88b08a',muted:'#8a7f72',text:'#3a342d',grid:'rgba(58,52,45,.08)',axis:'#d8d0c1',bg:'#ffffff'};
+
+function rowsFor(view){
+  return view==='daily'?PAYLOAD.daily:view==='weekly'?PAYLOAD.weekly:view==='monthly'?PAYLOAD.monthly:PAYLOAD.quarterly;
+}
+function labelFor(view,r){
+  if(view==='daily') return fmtUKShort(r.date);
+  if(view==='weekly') return fmtUKShort(r.start);
+  return r.label;
+}
+function periodLabel(view,r){
+  if(view==='daily') return fmtUK(r.date);
+  if(view==='weekly') return fmtUK(r.start)+' – '+fmtUK(r.end);
+  return r.label;
+}
+function subsKey(view){return view==='daily'?'subs':'subs_end';}
+
+// ----- SVG helpers -----
+function svgEl(tag, attrs={}, children=[]){
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for(const k in attrs){ el.setAttribute(k, attrs[k]); }
+  for(const c of children){ el.appendChild(c); }
+  return el;
+}
+function niceTicks(max, count=5){
+  if(max<=0) return [0];
+  const rough = max/count;
+  const pow = Math.pow(10, Math.floor(Math.log10(rough)));
+  const norm = rough/pow;
+  let step;
+  if(norm<=1) step=1*pow;
+  else if(norm<=2) step=2*pow;
+  else if(norm<=2.5) step=2.5*pow;
+  else if(norm<=5) step=5*pow;
+  else step=10*pow;
+  const ticks=[];
+  for(let v=0; v<=max+step*0.001; v+=step) ticks.push(v);
+  if(ticks[ticks.length-1] < max) ticks.push(ticks[ticks.length-1]+step);
+  return ticks;
+}
+
+// ----- Combo chart: bars + line, dual axis -----
+function renderCombo(view){
+  const host = document.getElementById('combo-host');
+  host.innerHTML = '';
+  const rows = rowsFor(view);
+  const labels = rows.map(r => labelFor(view,r));
+  const spend = rows.map(r => r.spend);
+  const cac = rows.map(r => r.cac);
+
+  const W = 1180, H = 380;
+  const M = {top:20,right:64,bottom:42,left:64};
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+
+  const maxSpend = Math.max(1, ...spend);
+  const maxCac = Math.max(1, ...cac);
+  const spendTicks = niceTicks(maxSpend, 5);
+  const cacTicks = niceTicks(maxCac, 5);
+  const yMaxL = spendTicks[spendTicks.length-1];
+  const yMaxR = cacTicks[cacTicks.length-1];
+
+  const n = labels.length;
+  const bandW = innerW / Math.max(n,1);
+  const barW = Math.max(2, Math.min(bandW * 0.65, view==='monthly'?60:view==='quarterly'?120:view==='weekly'?40:14));
+
+  const svg = svgEl('svg',{viewBox:`0 0 ${W} ${H}`, preserveAspectRatio:'xMidYMid meet', xmlns:'http://www.w3.org/2000/svg'});
+  svg.style.width = '100%';
+  svg.style.height = 'auto';
+
+  // grid + left ticks (spend)
+  for(const t of spendTicks){
+    const y = M.top + innerH - (t/yMaxL)*innerH;
+    svg.appendChild(svgEl('line',{x1:M.left,x2:M.left+innerW,y1:y,y2:y,stroke:COLORS.grid,'stroke-width':1}));
+    const lbl = svgEl('text',{x:M.left-8,y:y+4,'text-anchor':'end',fill:COLORS.accent,'font-size':10});
+    lbl.textContent = '£'+Math.round(t).toLocaleString('en-GB');
+    svg.appendChild(lbl);
+  }
+  // right ticks (CAC)
+  for(const t of cacTicks){
+    const y = M.top + innerH - (t/yMaxR)*innerH;
+    const lbl = svgEl('text',{x:M.left+innerW+8,y:y+4,'text-anchor':'start',fill:COLORS.accent2,'font-size':10});
+    lbl.textContent = '£'+Math.round(t).toLocaleString('en-GB');
+    svg.appendChild(lbl);
+  }
+  // axis lines
+  svg.appendChild(svgEl('line',{x1:M.left,x2:M.left,y1:M.top,y2:M.top+innerH,stroke:COLORS.axis,'stroke-width':1}));
+  svg.appendChild(svgEl('line',{x1:M.left+innerW,x2:M.left+innerW,y1:M.top,y2:M.top+innerH,stroke:COLORS.axis,'stroke-width':1}));
+  svg.appendChild(svgEl('line',{x1:M.left,x2:M.left+innerW,y1:M.top+innerH,y2:M.top+innerH,stroke:COLORS.axis,'stroke-width':1}));
+
+  // bars (spend)
+  rows.forEach((r,i)=>{
+    const cx = M.left + bandW*(i+0.5);
+    const h = (r.spend/yMaxL)*innerH;
+    const y = M.top + innerH - h;
+    const rect = svgEl('rect',{
+      x: cx - barW/2,
+      y: y,
+      width: barW,
+      height: Math.max(0,h),
+      fill: 'rgba(232,156,90,.78)',
+      stroke: COLORS.accent,
+      'stroke-width': 1
+    });
+    rect.appendChild(svgEl('title',{},[]));
+    rect.querySelector('title').textContent = periodLabel(view,r)+' · Spend '+fmtGBP2(r.spend)+' · CAC '+(r.nc>0?fmtGBP2(r.cac):'—')+' · NC '+r.nc;
+    svg.appendChild(rect);
+  });
+
+  // line (CAC)
+  if(n>1){
+    let d = '';
+    rows.forEach((r,i)=>{
+      const cx = M.left + bandW*(i+0.5);
+      const cy = M.top + innerH - (r.cac/yMaxR)*innerH;
+      d += (i===0?'M':'L') + cx + ' ' + cy + ' ';
+    });
+    svg.appendChild(svgEl('path',{d:d.trim(),fill:'none',stroke:COLORS.accent2,'stroke-width':2.5,'stroke-linejoin':'round','stroke-linecap':'round'}));
+  }
+  // line dots
+  rows.forEach((r,i)=>{
+    const cx = M.left + bandW*(i+0.5);
+    const cy = M.top + innerH - (r.cac/yMaxR)*innerH;
+    const c = svgEl('circle',{cx,cy,r: view==='daily'?2.5:5, fill:COLORS.accent2, stroke:COLORS.bg,'stroke-width':1.5});
+    c.appendChild(svgEl('title',{},[]));
+    c.querySelector('title').textContent = periodLabel(view,r)+' · CAC '+(r.nc>0?fmtGBP2(r.cac):'—');
+    svg.appendChild(c);
+  });
+
+  // x labels (skip some for daily)
+  const skip = view==='daily' ? Math.max(1, Math.ceil(n/12)) : 1;
+  labels.forEach((lbl,i)=>{
+    if(i % skip !== 0 && i !== n-1) return;
+    const cx = M.left + bandW*(i+0.5);
+    const tx = svgEl('text',{x:cx, y:M.top+innerH+18,'text-anchor':'middle', fill:COLORS.muted,'font-size':10});
+    tx.textContent = lbl;
+    svg.appendChild(tx);
+  });
+
+  // axis titles
+  const ttlL = svgEl('text',{x:M.left-46,y:M.top-6,'text-anchor':'start',fill:COLORS.accent,'font-size':11});
+  ttlL.textContent='Spend (£)';
+  svg.appendChild(ttlL);
+  const ttlR = svgEl('text',{x:M.left+innerW+8,y:M.top-6,'text-anchor':'start',fill:COLORS.accent2,'font-size':11});
+  ttlR.textContent='CAC (£)';
+  svg.appendChild(ttlR);
+
+  host.appendChild(svg);
+}
+
+// ----- Stacked bar: sub vs OTP -----
+function renderMix(view){
+  const host = document.getElementById('mix-host');
+  host.innerHTML = '';
+  const rows = rowsFor(view);
+  const labels = rows.map(r => labelFor(view,r));
+  const sub = rows.map(r => r.sub_nc);
+  const otp = rows.map(r => r.otp_nc);
+
+  const W = 580, H = 280;
+  const M = {top:14,right:14,bottom:32,left:48};
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const maxY = Math.max(1, ...rows.map(r => r.nc));
+  const ticks = niceTicks(maxY, 4);
+  const yMax = ticks[ticks.length-1];
+  const n = labels.length;
+  const bandW = innerW / Math.max(n,1);
+  const barW = Math.max(2, Math.min(bandW * 0.65, view==='monthly'?60:view==='quarterly'?120:view==='weekly'?28:10));
+
+  const svg = svgEl('svg',{viewBox:`0 0 ${W} ${H}`, preserveAspectRatio:'xMidYMid meet'});
+  for(const t of ticks){
+    const y = M.top + innerH - (t/yMax)*innerH;
+    svg.appendChild(svgEl('line',{x1:M.left,x2:M.left+innerW,y1:y,y2:y,stroke:COLORS.grid}));
+    const lbl = svgEl('text',{x:M.left-6,y:y+4,'text-anchor':'end',fill:COLORS.muted,'font-size':10});
+    lbl.textContent = Math.round(t);
+    svg.appendChild(lbl);
+  }
+  rows.forEach((r,i)=>{
+    const cx = M.left + bandW*(i+0.5);
+    const subH = (r.sub_nc/yMax)*innerH;
+    const otpH = (r.otp_nc/yMax)*innerH;
+    const subY = M.top + innerH - subH;
+    const otpY = subY - otpH;
+    const r1 = svgEl('rect',{x:cx-barW/2,y:subY,width:barW,height:Math.max(0,subH),fill:'rgba(136,176,138,.85)',stroke:COLORS.good,'stroke-width':1});
+    r1.appendChild(svgEl('title',{},[])); r1.querySelector('title').textContent = periodLabel(view,r)+' · Sub '+r.sub_nc;
+    svg.appendChild(r1);
+    const r2 = svgEl('rect',{x:cx-barW/2,y:otpY,width:barW,height:Math.max(0,otpH),fill:'rgba(138,127,114,.45)',stroke:COLORS.muted,'stroke-width':1});
+    r2.appendChild(svgEl('title',{},[])); r2.querySelector('title').textContent = periodLabel(view,r)+' · OTP '+r.otp_nc;
+    svg.appendChild(r2);
+  });
+  const skip = view==='daily' ? Math.max(1, Math.ceil(n/8)) : 1;
+  labels.forEach((lbl,i)=>{
+    if(i % skip !== 0 && i !== n-1) return;
+    const cx = M.left + bandW*(i+0.5);
+    const tx = svgEl('text',{x:cx,y:M.top+innerH+16,'text-anchor':'middle',fill:COLORS.muted,'font-size':9});
+    tx.textContent = lbl;
+    svg.appendChild(tx);
+  });
+  host.appendChild(svg);
+}
+
+// ----- Active subscribers area chart -----
+function renderSubs(view){
+  const host = document.getElementById('subs-host');
+  host.innerHTML = '';
+  const rows = rowsFor(view);
+  const labels = rows.map(r => labelFor(view,r));
+  const key = subsKey(view);
+  const subs = rows.map(r => r[key]);
+
+  const W = 580, H = 280;
+  const M = {top:14,right:14,bottom:32,left:54};
+  const innerW = W - M.left - M.right;
+  const innerH = H - M.top - M.bottom;
+  const minY = Math.min(...subs);
+  const maxY = Math.max(...subs);
+  const pad = Math.max(5, (maxY - minY) * 0.15);
+  const y0 = Math.floor((minY - pad) / 10) * 10;
+  const y1 = Math.ceil((maxY + pad) / 10) * 10;
+  const range = Math.max(1, y1 - y0);
+  const ticks = niceTicks(range, 4).map(t => y0 + t).filter(t => t <= y1);
+  if(!ticks.includes(y0)) ticks.unshift(y0);
+  const n = labels.length;
+  const bandW = innerW / Math.max(n-1,1);
+
+  const svg = svgEl('svg',{viewBox:`0 0 ${W} ${H}`, preserveAspectRatio:'xMidYMid meet'});
+  for(const t of ticks){
+    const y = M.top + innerH - ((t - y0)/range)*innerH;
+    svg.appendChild(svgEl('line',{x1:M.left,x2:M.left+innerW,y1:y,y2:y,stroke:COLORS.grid}));
+    const lbl = svgEl('text',{x:M.left-6,y:y+4,'text-anchor':'end',fill:COLORS.muted,'font-size':10});
+    lbl.textContent = Math.round(t).toLocaleString('en-GB');
+    svg.appendChild(lbl);
+  }
+  // build line
+  let d = '', dArea = '';
+  rows.forEach((r,i)=>{
+    const cx = (n>1) ? M.left + bandW*i : M.left + innerW/2;
+    const cy = M.top + innerH - ((r[key] - y0)/range)*innerH;
+    d += (i===0?'M':'L') + cx + ' ' + cy + ' ';
+  });
+  // area path
+  if(n>1){
+    dArea = d + `L ${M.left+innerW} ${M.top+innerH} L ${M.left} ${M.top+innerH} Z`;
+    svg.appendChild(svgEl('path',{d:dArea,fill:'rgba(232,156,90,.16)'}));
+    svg.appendChild(svgEl('path',{d:d.trim(),fill:'none',stroke:COLORS.accent,'stroke-width':2}));
+  }
+  rows.forEach((r,i)=>{
+    const cx = (n>1) ? M.left + bandW*i : M.left + innerW/2;
+    const cy = M.top + innerH - ((r[key] - y0)/range)*innerH;
+    const c = svgEl('circle',{cx,cy,r: view==='daily'?1.8:4, fill:COLORS.accent, stroke:COLORS.bg,'stroke-width':1.2});
+    c.appendChild(svgEl('title',{},[])); c.querySelector('title').textContent = periodLabel(view,r)+' · Subs '+fmtInt(r[key]);
+    svg.appendChild(c);
+  });
+  const skip = view==='daily' ? Math.max(1, Math.ceil(n/8)) : 1;
+  labels.forEach((lbl,i)=>{
+    if(i % skip !== 0 && i !== n-1) return;
+    const cx = (n>1) ? M.left + bandW*i : M.left + innerW/2;
+    const tx = svgEl('text',{x:cx,y:M.top+innerH+16,'text-anchor':'middle',fill:COLORS.muted,'font-size':9});
+    tx.textContent = lbl;
+    svg.appendChild(tx);
+  });
+  host.appendChild(svg);
+}
+
+function renderTable(view){
+  const rows = rowsFor(view);
+  const body = document.querySelector('#detail tbody');
+  body.innerHTML = '';
+  const order = view==='quarterly' ? rows : [...rows].reverse();
+  for(const r of order){
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${periodLabel(view,r)}</td>
+      <td>${fmtGBP0(r.spend)}</td>
+      <td>${fmtInt(r.nc)}</td>
+      <td>${fmtInt(r.sub_nc)}</td>
+      <td>${fmtInt(r.otp_nc)}</td>
+      <td>${r.nc>0?fmtGBP2(r.cac):'—'}</td>
+      <td>${r.nc>0?fmtPct1(r.sub_uptake):'—'}</td>
+      <td>${fmtInt(r[subsKey(view)])}</td>`;
+    body.appendChild(tr);
+  }
+  const legend = {daily:'one row per day',weekly:'Mon–Sun ISO weeks',monthly:'calendar month',quarterly:'calendar quarter (partial Q2)'};
+  document.getElementById('table-legend').textContent = '· ' + legend[view];
+}
+
+function render(view){
+  renderKpis(view);
+  renderCombo(view);
+  renderMix(view);
+  renderSubs(view);
+  renderTable(view);
+}
+
+document.querySelectorAll('#tabs .tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#tabs .tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render(btn.dataset.view);
+  });
+});
+
+render('daily');
+</script>
+</body>
+</html>
